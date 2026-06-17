@@ -4,9 +4,13 @@
 //! The [`OutputFormat`] enum maps to the appropriate encoder implementation
 //! and can be used directly with clap's `ValueEnum` derive.
 
-pub mod mp3;
-pub mod ogg;
 pub mod wav;
+
+#[cfg(feature = "mp3")]
+pub mod mp3;
+
+#[cfg(feature = "ogg")]
+pub mod ogg;
 
 use std::path::Path;
 

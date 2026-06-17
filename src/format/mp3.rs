@@ -1,29 +1,54 @@
 //! MP3 (MPEG-1 Audio Layer 3) encoder.
 //!
-//! Requires the `mp3` cargo feature.
-//! Currently a stub — real LAME encoding is not yet implemented.
+//! Requires the `mp3` cargo feature. Uses the OxiAudio LAME adapter
+//! (`mp3-encode-lame`) to encode via libmp3lame.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-use crate::error::Result;
+use oxiaudio::{AudioBuffer, ChannelLayout, SampleFormat};
+
+use crate::error::{Result, TrackExError};
 use crate::format::AudioEncoder;
 
-/// Encodes interleaved `f32` samples to an MP3 file.
-pub struct Mp3Encoder;
+/// Encodes interleaved `f32` samples to an MP3 file via LAME.
+pub struct Mp3Encoder {
+    /// Accumulated interleaved `f32` samples.
+    samples: Vec<f32>,
+    sample_rate: u32,
+    channels: u16,
+    path: PathBuf,
+}
 
 impl Mp3Encoder {
     /// Create a new MP3 encoder writing to `path`.
-    pub fn new(_path: &Path, _sample_rate: u32, _channels: u16) -> Result<Self> {
-        todo!("MP3 encoding is not yet implemented")
+    pub fn new(path: &Path, sample_rate: u32, channels: u16) -> Result<Self> {
+        Ok(Self {
+            samples: Vec::new(),
+            sample_rate,
+            channels,
+            path: path.to_path_buf(),
+        })
     }
 }
 
 impl AudioEncoder for Mp3Encoder {
-    fn encode(&mut self, _samples: &[f32]) -> Result<()> {
-        todo!("MP3 encoding is not yet implemented")
+    fn encode(&mut self, samples: &[f32]) -> Result<()> {
+        self.samples.extend_from_slice(samples);
+        Ok(())
     }
 
     fn finalize(self: Box<Self>) -> Result<()> {
-        todo!("MP3 encoding is not yet implemented")
+        let buf = AudioBuffer {
+            samples: self.samples,
+            sample_rate: self.sample_rate,
+            channels: ChannelLayout::from(self.channels),
+            format: SampleFormat::F32,
+        };
+
+        // VBR "Music" preset at 192 kbps nominal, writes directly to file.
+        oxiaudio::encode_mp3_with_auto_replaygain(&buf, &self.path, 192)
+            .map_err(|e| TrackExError::Encoding(format!("MP3 encode error: {e}")))?;
+
+        Ok(())
     }
 }
