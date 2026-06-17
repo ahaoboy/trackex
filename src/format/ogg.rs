@@ -1,14 +1,19 @@
 //! Ogg Vorbis encoder.
 //!
 //! Requires the `ogg` cargo feature. Uses the [`vorbis-encoder`] crate
-//! which wraps libvorbis for encoding and Ogg container muxing.
+//! (FFI to libvorbis + libogg) for both Vorbis codec encoding and Ogg
+//! container muxing.
 //!
-//! Note: `oxideav-vorbis` is the planned long-term replacement once its
-//! encoder pipeline is complete (currently it is decoder-only).
-//! `vorbis-encoder` 0.1.x takes planar `i16` input; we accumulate samples
+//! ## Migration plan
+//!
+//! The long-term goal is to replace `vorbis-encoder` with the Pure-Rust
+//! `oxideav-ogg` (Ogg container) + `oxideav-vorbis` (Vorbis codec) once
+//! the latter's encoder pipeline is complete (currently decoder-only).
+//! `vorbis-encoder` takes interleaved `i16` input; we accumulate samples
 //! in memory and encode them in [`AudioEncoder::finalize`].
 
-use std::io::Write;
+use std::fs::File;
+use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
 
 use crate::error::{Result, TrackExError};
@@ -59,9 +64,8 @@ impl AudioEncoder for OggEncoder {
             ))
         })?;
 
-        // Feed accumulated samples in chunks to limit peak memory.
         let chunk_samples = 4096 * self.channels as usize;
-        let mut file = std::fs::File::create(&self.path)?;
+        let mut file = BufWriter::new(File::create(&self.path)?);
 
         for chunk in self.samples.chunks(chunk_samples) {
             let data = enc.encode(&chunk.to_vec()).map_err(|code| {
