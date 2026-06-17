@@ -1,0 +1,24 @@
+[package]
+name = "trackex"
+version = "0.1.0"
+edition = "2021"
+description = "Extract audio tracks from video files and convert to various formats"
+license = "MIT"
+repository = "https://github.com/ahaoboy/trackex"
+homepage = "https://github.com/ahaoboy/trackex"
+authors = ["ahaoboy"]
+
+[features]
+default = ["wav", "cli"]
+wav = []
+mp3 = []
+ogg = []
+cli = ["dep:clap"]
+serde = ["dep:serde"]
+
+[dependencies]
+symphonia = { version = "0.6", features = ["all"] }
+hound = "3"
+thiserror = "2"
+clap = { version = "4", features = ["derive"], optional = true }
+serde = { version = "1", features = ["derive"], optional = true }

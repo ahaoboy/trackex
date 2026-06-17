@@ -1,0 +1,6 @@
+/target
+/Cargo.lock
+/cache
+/*.mp3
+/*.ogg
+/*.wav
