@@ -13,6 +13,9 @@ pub mod mp3;
 #[cfg(feature = "ogg")]
 pub mod ogg;
 
+#[cfg(feature = "flac")]
+pub mod flac;
+
 use std::path::Path;
 
 use crate::error::Result;
@@ -39,6 +42,11 @@ pub enum OutputFormat {
     #[cfg(feature = "ogg")]
     #[cfg_attr(feature = "cli", clap(name = "ogg"))]
     Ogg,
+
+    /// FLAC lossless. Requires the `flac` feature.
+    #[cfg(feature = "flac")]
+    #[cfg_attr(feature = "cli", clap(name = "flac"))]
+    Flac,
 }
 
 /// Common interface for audio encoders.
@@ -81,6 +89,13 @@ impl OutputFormat {
                 "OGG support is not compiled in — enable the `ogg` feature".into(),
             )),
 
+            #[cfg(feature = "flac")]
+            "flac" => Ok(Self::Flac),
+            #[cfg(not(feature = "flac"))]
+            "flac" => Err(crate::error::TrackExError::UnsupportedFormat(
+                "FLAC support is not compiled in — enable the `flac` feature".into(),
+            )),
+
             other => Err(crate::error::TrackExError::UnknownExtension(
                 other.to_owned(),
             )),
@@ -109,6 +124,11 @@ pub fn create_encoder(
         #[cfg(feature = "ogg")]
         OutputFormat::Ogg => {
             let enc = ogg::OggEncoder::new(path, sample_rate, channels)?;
+            Ok(Box::new(enc))
+        }
+        #[cfg(feature = "flac")]
+        OutputFormat::Flac => {
+            let enc = flac::FlacEncoder::new(path, sample_rate, channels)?;
             Ok(Box::new(enc))
         }
     }
