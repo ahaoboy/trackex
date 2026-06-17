@@ -9,17 +9,18 @@ homepage = "https://github.com/ahaoboy/trackex"
 authors = ["ahaoboy"]
 
 [features]
-default = ["wav", "cli", "mp3"]
-wav = []
+default = ["cli", "wav", "mp3", "ogg", "serde"]
+wav = ["dep:hound"]
 mp3 = ["dep:oxiaudio"]
-ogg = []
+ogg = ["dep:vorbis-encoder"]
 cli = ["dep:clap"]
 serde = ["dep:serde"]
 
 [dependencies]
 symphonia = { version = "0.6", features = ["all"] }
-hound = "3"
+hound = { version = "3", optional = true }
 thiserror = "2"
 clap = { version = "4", features = ["derive"], optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
 oxiaudio = { version = "0.1", features = ["mp3-encode-lame"], optional = true }
+vorbis-encoder = { version = "0.1", optional = true }

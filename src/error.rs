@@ -20,6 +20,7 @@ pub enum TrackExError {
     Format(#[from] symphonia::core::errors::Error),
 
     /// Wraps a WAV (hound) encoding error.
+    #[cfg(feature = "wav")]
     #[error("WAV encoding error: {0}")]
     Wav(#[from] hound::Error),
 

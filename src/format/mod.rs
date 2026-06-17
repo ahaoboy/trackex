@@ -4,6 +4,7 @@
 //! The [`OutputFormat`] enum maps to the appropriate encoder implementation
 //! and can be used directly with clap's `ValueEnum` derive.
 
+#[cfg(feature = "wav")]
 pub mod wav;
 
 #[cfg(feature = "mp3")]
@@ -24,7 +25,9 @@ use crate::error::Result;
 #[cfg_attr(feature = "cli", derive(clap::ValueEnum))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum OutputFormat {
-    /// Microsoft WAV (PCM 16-bit). Always available.
+    /// Microsoft WAV (PCM 16-bit). Requires the `wav` feature.
+    #[cfg(feature = "wav")]
+    #[cfg_attr(feature = "cli", clap(name = "wav"))]
     Wav,
 
     /// MPEG-1 Audio Layer 3. Requires the `mp3` feature.
@@ -57,11 +60,27 @@ impl OutputFormat {
     /// Returns an error if the extension is not recognised.
     pub fn from_extension(ext: &str) -> Result<Self> {
         match ext.to_lowercase().as_str() {
+            #[cfg(feature = "wav")]
             "wav" => Ok(Self::Wav),
+            #[cfg(not(feature = "wav"))]
+            "wav" => Err(crate::error::TrackExError::UnsupportedFormat(
+                "WAV support is not compiled in — enable the `wav` feature".into(),
+            )),
+
             #[cfg(feature = "mp3")]
             "mp3" => Ok(Self::Mp3),
+            #[cfg(not(feature = "mp3"))]
+            "mp3" => Err(crate::error::TrackExError::UnsupportedFormat(
+                "MP3 support is not compiled in — enable the `mp3` feature".into(),
+            )),
+
             #[cfg(feature = "ogg")]
             "ogg" => Ok(Self::Ogg),
+            #[cfg(not(feature = "ogg"))]
+            "ogg" => Err(crate::error::TrackExError::UnsupportedFormat(
+                "OGG support is not compiled in — enable the `ogg` feature".into(),
+            )),
+
             other => Err(crate::error::TrackExError::UnknownExtension(
                 other.to_owned(),
             )),
@@ -77,6 +96,7 @@ pub fn create_encoder(
     channels: u16,
 ) -> Result<Box<dyn AudioEncoder>> {
     match format {
+        #[cfg(feature = "wav")]
         OutputFormat::Wav => {
             let enc = wav::WavEncoder::new(path, sample_rate, channels)?;
             Ok(Box::new(enc))
