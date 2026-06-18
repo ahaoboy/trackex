@@ -16,8 +16,6 @@ pub mod ogg;
 #[cfg(feature = "flac")]
 pub mod flac;
 
-use std::path::Path;
-
 use crate::error::Result;
 
 /// Supported output formats.
@@ -52,13 +50,13 @@ pub enum OutputFormat {
 /// Common interface for audio encoders.
 ///
 /// Each encoder receives interleaved `f32` samples (range -1.0 … 1.0)
-/// and writes encoded data to the underlying sink.
+/// and produces encoded bytes in [`finalize`](AudioEncoder::finalize).
 pub trait AudioEncoder: Send {
     /// Encode a block of interleaved `f32` samples.
     fn encode(&mut self, samples: &[f32]) -> Result<()>;
 
-    /// Flush any remaining data and finalize the output file.
-    fn finalize(self: Box<Self>) -> Result<()>;
+    /// Flush any remaining data and return the encoded audio bytes.
+    fn finalize(self: Box<Self>) -> Result<Vec<u8>>;
 }
 
 impl OutputFormat {
@@ -106,29 +104,28 @@ impl OutputFormat {
 /// Factory: create the right encoder for the given format.
 pub fn create_encoder(
     format: OutputFormat,
-    path: &Path,
     sample_rate: u32,
     channels: u16,
 ) -> Result<Box<dyn AudioEncoder>> {
     match format {
         #[cfg(feature = "wav")]
         OutputFormat::Wav => {
-            let enc = wav::WavEncoder::new(path, sample_rate, channels)?;
+            let enc = wav::WavEncoder::new(sample_rate, channels)?;
             Ok(Box::new(enc))
         }
         #[cfg(feature = "mp3")]
         OutputFormat::Mp3 => {
-            let enc = mp3::Mp3Encoder::new(path, sample_rate, channels)?;
+            let enc = mp3::Mp3Encoder::new(sample_rate, channels)?;
             Ok(Box::new(enc))
         }
         #[cfg(feature = "ogg")]
         OutputFormat::Ogg => {
-            let enc = ogg::OggEncoder::new(path, sample_rate, channels)?;
+            let enc = ogg::OggEncoder::new(sample_rate, channels)?;
             Ok(Box::new(enc))
         }
         #[cfg(feature = "flac")]
         OutputFormat::Flac => {
-            let enc = flac::FlacEncoder::new(path, sample_rate, channels)?;
+            let enc = flac::FlacEncoder::new(sample_rate, channels)?;
             Ok(Box::new(enc))
         }
     }

@@ -10,25 +10,27 @@
 //! | `wav`   | WAV (PCM 16-bit) output *(default)*  |
 //! | `mp3`   | MP3 output via LAME                  |
 //! | `ogg`   | Ogg Vorbis output                    |
+//! | `flac`  | FLAC lossless output                 |
+//! | `cli`   | CLI binary with clap *(default)*     |
 //! | `serde` | Serialize/Deserialize for config types|
 //!
 //! ## Quick example (library)
 //!
 //! ```no_run
-//! use std::path::PathBuf;
 //! use trackex::config::AudioConfig;
 //! use trackex::format::OutputFormat;
 //! use trackex::extract_audio;
 //!
+//! let input_data = std::fs::read("video.mp4").unwrap();
 //! let cfg = AudioConfig {
-//!     input: PathBuf::from("video.mp4"),
-//!     output: PathBuf::from("audio.wav"),
+//!     input_data,
 //!     format: OutputFormat::Wav,
 //!     sample_rate: None,
 //!     channels: None,
 //! };
 //!
-//! extract_audio(&cfg).expect("extraction failed");
+//! let wav_bytes = extract_audio(&cfg).expect("extraction failed");
+//! std::fs::write("audio.wav", &wav_bytes).unwrap();
 //! ```
 
 pub mod audio;

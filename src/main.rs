@@ -61,18 +61,48 @@ mod cli {
             }
         };
 
+        // Read input file (app layer I/O).
+        let input_data = match std::fs::read(&cli.input) {
+            Ok(data) => data,
+            Err(e) => {
+                eprintln!("ERROR: failed to read '{}': {e}", cli.input.display());
+                std::process::exit(1);
+            }
+        };
+
+        let input_size = humansize::format_size(input_data.len(), humansize::BINARY);
+
         let config = AudioConfig {
-            input: cli.input,
-            output: cli.output,
+            input_data,
             format,
             sample_rate: cli.sample_rate,
             channels: cli.channels,
         };
 
-        if let Err(e) = trackex::extract_audio(&config) {
-            eprintln!("ERROR: {e}");
+        // Transcode (library call).
+        eprintln!(
+            "Extracting audio from {} ({input_size}) ...",
+            cli.input.display()
+        );
+        let output_data = match trackex::extract_audio(&config) {
+            Ok(data) => data,
+            Err(e) => {
+                eprintln!("ERROR: {e}");
+                std::process::exit(1);
+            }
+        };
+
+        // Write output file (app layer I/O).
+        if let Err(e) = std::fs::write(&cli.output, &output_data) {
+            eprintln!("ERROR: failed to write '{}': {e}", cli.output.display());
             std::process::exit(1);
         }
+
+        let output_size = humansize::format_size(output_data.len(), humansize::BINARY);
+        println!(
+            "Successfully wrote {} ({output_size})",
+            cli.output.display()
+        );
     }
 }
 
