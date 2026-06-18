@@ -19,6 +19,12 @@ serde = ["dep:serde"]
 
 [dependencies]
 symphonia = { version = "0.6", features = ["all"] }
+
+# AAC https://github.com/pdeljanov/Symphonia/pull/473
+# symphonia = { features = [
+#   "all",
+# ], git = "https://github.com/felipehertzer/Symphonia.git", branch = "dev-0.6" }
+
 hound = { version = "3", optional = true }
 thiserror = "2"
 clap = { version = "4", features = ["derive"], optional = true }
